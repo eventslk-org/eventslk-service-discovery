@@ -1,0 +1,24 @@
+management:
+  endpoint:
+    health:
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+eureka:
+  instance:
+    # Uses the Pod name (e.g., eureka-0) assigned by Kubernetes
+    hostname: ${HOSTNAME:localhost}
+    prefer-ip-address: false
+  client:
+    # Enables High Availability: Peers will now sync data
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      # This variable must be provided via the K8s StatefulSet/Deployment env
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+  server:
+    # In production, we keep the default wait time to ensure data syncs from peers
+    wait-time-in-ms-when-sync-empty: 60000

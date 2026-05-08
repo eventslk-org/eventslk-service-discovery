@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: devicelk-discovery
+  namespace: devicelk
+spec:
+  serviceName: devicelk-discovery
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devicelk-discovery
+  template:
+    metadata:
+      labels:
+        app: devicelk-discovery
+    spec:
+      containers:
+        - name: discovery
+          image: devicelk/discovery-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8761
+              name: http
+          env:
+            - name: SERVER_PORT
+              value: "8761"
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: discovery-config
+                  key: SPRING_PROFILES_ACTIVE
+            - name: SERVICE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: discovery-config
+                  key: SERVICE_ENV
+            - name: SERVICE_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: discovery-config
+                  key: SERVICE_VERSION
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: INSTANCE_ZONE
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: DISCOVERY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: discovery-secret
+                  key: DISCOVERY_ADMIN_USER
+            - name: DISCOVERY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: discovery-secret
+                  key: DISCOVERY_ADMIN_PASSWORD
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://$(DISCOVERY_ADMIN_USER):$(DISCOVERY_ADMIN_PASSWORD)@devicelk-discovery-0.devicelk-discovery.devicelk.svc.cluster.local:8761/eureka/,http://$(DISCOVERY_ADMIN_USER):$(DISCOVERY_ADMIN_PASSWORD)@devicelk-discovery-1.devicelk-discovery.devicelk.svc.cluster.local:8761/eureka/"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8761
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8761
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 200m
+              memory: 384Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi

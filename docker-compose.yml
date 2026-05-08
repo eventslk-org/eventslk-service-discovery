@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+  eureka1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eureka1
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8761
+      HOSTNAME: eureka1
+      DISCOVERY_ADMIN_USER: discovery
+      DISCOVERY_ADMIN_PASSWORD: changeit
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery:changeit@eureka1:8761/eureka/,http://discovery:changeit@eureka2:8762/eureka/
+      SERVICE_ENV: dev
+      SERVICE_VERSION: local
+      INSTANCE_ZONE: zone-a
+    ports:
+      - "8761:8761"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8761/actuator/health/readiness"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  eureka2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eureka2
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8762
+      HOSTNAME: eureka2
+      DISCOVERY_ADMIN_USER: discovery
+      DISCOVERY_ADMIN_PASSWORD: changeit
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery:changeit@eureka1:8761/eureka/,http://discovery:changeit@eureka2:8762/eureka/
+      SERVICE_ENV: dev
+      SERVICE_VERSION: local
+      INSTANCE_ZONE: zone-b
+    ports:
+      - "8762:8762"
+    restart: unless-stopped
+    depends_on:
+      eureka1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8762/actuator/health/readiness"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s

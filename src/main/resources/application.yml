@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: ${SERVICE_NAME:eventslk-discovery-server}
+  profiles:
+    active: dev # Default profile for local development
+
+server:
+  port: ${SERVER_PORT:8761}
+
+management:
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+eureka:
+  instance:
+    metadata-map:
+      env: ${SERVICE_ENV:dev}
+      version: ${SERVICE_VERSION:local}
+      zone: ${INSTANCE_ZONE:local}
+      team: ${SERVICE_TEAM:platform}
+      commit: ${GIT_COMMIT:unknown}
+  server:
+    # Common server logic for both environments
+    enable-self-preservation: true
+    eviction-interval-timer-in-ms: 60000
+  client:
+    healthcheck:
+      enabled: true # Keeps the server aware of its own status
+
+app:
+  security:
+    username: ${DISCOVERY_ADMIN_USER:discovery}
+    password: ${DISCOVERY_ADMIN_PASSWORD:changeit}

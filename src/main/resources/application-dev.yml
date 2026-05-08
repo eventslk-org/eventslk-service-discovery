@@ -1,0 +1,21 @@
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env,configprops
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    # Standalone settings: prevents errors when no other nodes exist
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # Speeds up startup by not waiting for peer synchronization
+    wait-time-in-ms-when-sync-empty: 0
